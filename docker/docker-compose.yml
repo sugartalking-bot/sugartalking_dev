@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  sugartalking:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: sugartalking:latest
+    container_name: sugartalking
+    ports:
+      - "5000:5000"
+    environment:
+      - LOG_LEVEL=DEBUG
+      - DATA_DIR=/data
+      - AUTO_REPORT_ERRORS=false  # Disable for local testing
+      # Uncomment to enable GitHub error reporting:
+      # - GITHUB_TOKEN=your_token_here
+      # - GITHUB_REPO=yourusername/yourrepo
+    volumes:
+      - sugartalking-data:/data
+      - sugartalking-logs:/data/logs
+    # Use host network mode to access local network devices
+    # This allows discovering receivers on your LAN
+    network_mode: host
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5000/api/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  sugartalking-data:
+    driver: local
+  sugartalking-logs:
+    driver: local

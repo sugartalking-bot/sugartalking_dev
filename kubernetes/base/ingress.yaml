@@ -1,0 +1,43 @@
+# Optional Ingress configuration
+#
+# Prerequisites:
+# - Ingress controller installed (nginx-ingress, traefik, etc.)
+# - Update the host field with your desired hostname
+#
+# To install nginx-ingress:
+#   kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.2/deploy/static/provider/cloud/deploy.yaml
+#
+# For local/homelab use with hostname:
+#   Add to /etc/hosts: 192.168.1.x sugartalking.local
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sugartalking
+  namespace: default
+  labels:
+    app: sugartalking
+  annotations:
+    # For nginx-ingress
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    # Uncomment for SSL/TLS (requires cert-manager)
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx  # Change based on your ingress controller
+  rules:
+  - host: sugartalking.local  # Change to your desired hostname
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: sugartalking
+            port:
+              number: 80
+
+  # Uncomment for TLS/SSL
+  # tls:
+  # - hosts:
+  #   - sugartalking.local
+  #   secretName: sugartalking-tls

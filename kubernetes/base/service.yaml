@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sugartalking
+  namespace: default
+  labels:
+    app: sugartalking
+spec:
+  type: ClusterIP  # Change to NodePort or LoadBalancer if needed
+  selector:
+    app: sugartalking
+  ports:
+  - name: http
+    port: 80
+    targetPort: 5000
+    protocol: TCP
+  sessionAffinity: ClientIP  # Sticky sessions for better UX

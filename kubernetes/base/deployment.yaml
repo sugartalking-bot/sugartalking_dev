@@ -1,0 +1,125 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sugartalking
+  namespace: default
+  labels:
+    app: sugartalking
+    version: "2.0.0"
+spec:
+  replicas: 1  # Single instance for homelab use
+  strategy:
+    type: Recreate  # Required for hostNetwork to avoid port conflicts
+  selector:
+    matchLabels:
+      app: sugartalking
+  template:
+    metadata:
+      labels:
+        app: sugartalking
+        version: "2.0.0"
+    spec:
+      # Use host network to access devices on LAN
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+
+      containers:
+      - name: sugartalking
+        image: localhost:5001/sugartalking:latest
+        # Alternative: ghcr.io/builderoftheworlds/sugartalking:latest (GitHub)
+        imagePullPolicy: Always
+
+        ports:
+        - name: http
+          containerPort: 5000
+          protocol: TCP
+
+        env:
+        # Load configuration from ConfigMap
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: sugartalking-config
+              key: LOG_LEVEL
+        - name: DATA_DIR
+          valueFrom:
+            configMapKeyRef:
+              name: sugartalking-config
+              key: DATA_DIR
+        - name: LOG_DIR
+          valueFrom:
+            configMapKeyRef:
+              name: sugartalking-config
+              key: LOG_DIR
+        - name: DISCOVERY_SUBNET
+          valueFrom:
+            configMapKeyRef:
+              name: sugartalking-config
+              key: DISCOVERY_SUBNET
+        - name: AUTO_REPORT_ERRORS
+          valueFrom:
+            configMapKeyRef:
+              name: sugartalking-config
+              key: AUTO_REPORT_ERRORS
+        - name: GITHUB_REPO
+          valueFrom:
+            configMapKeyRef:
+              name: sugartalking-config
+              key: GITHUB_REPO
+
+        # Load secrets
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: sugartalking-secrets
+              key: GITHUB_TOKEN
+              optional: true  # Make optional so app works without token
+
+        # Volume mounts
+        volumeMounts:
+        - name: data
+          mountPath: /data
+
+        # Resource limits (adjust based on your cluster)
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+
+        # Liveness probe (restart if unhealthy)
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+
+        # Readiness probe (route traffic only when ready)
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 5000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+      # Volumes
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: sugartalking-data
+
+      # Security context
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+
+      # Restart policy
+      restartPolicy: Always

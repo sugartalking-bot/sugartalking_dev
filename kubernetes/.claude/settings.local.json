@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod:*)",
+      "Bash(kubectl get:*)",
+      "Bash(kubectl describe:*)",
+      "Bash(kubectl config:*)",
+      "Bash(kubectl delete:*)",
+      "Bash(kubectl apply:*)",
+      "Bash(kubectl version:*)",
+      "Bash(docker save:*)",
+      "Bash(sudo k3s ctr images import:*)",
+      "Bash(k3s ctr images import:*)",
+      "Bash(docker run:*)",
+      "Bash(docker tag:*)",
+      "Bash(docker push:*)",
+      "Bash(kubectl logs:*)",
+      "Bash(kubectl scale:*)",
+      "Bash(ss:*)",
+      "Bash(netstat:*)",
+      "Bash(docker stop:*)",
+      "Bash(docker rm:*)",
+      "Bash(curl:*)",
+      "Bash(kubectl rollout status:*)",
+      "Bash(kubectl exec:*)",
+      "Bash(docker build:*)",
+      "Bash(python:*)",
+      "Bash(kubectl rollout:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

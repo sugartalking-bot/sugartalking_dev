@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sugartalking-data
+  namespace: default
+  labels:
+    app: sugartalking
+    component: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi  # Adjust based on your needs
+  # Optional: Specify storage class
+  # storageClassName: standard
