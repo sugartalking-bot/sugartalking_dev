@@ -81,6 +81,97 @@ Then visit: http://sugartalking.local (add to /etc/hosts)
 
 ---
 
+## 🔄 Managing the Deployment
+
+### Restart After Code Changes
+
+After making changes to the application code:
+
+```bash
+cd /mnt/c/Users/matt/PycharmProjects/sugartalking
+./scripts/build-and-deploy.sh
+```
+
+This script will:
+1. Build a new Docker image
+2. Push it to the local registry (localhost:5001)
+3. Restart the Kubernetes deployment
+4. Wait for the rollout to complete
+
+### Stop the Application
+
+**Scale down to zero replicas:**
+```bash
+kubectl scale deployment sugartalking --replicas=0 -n default
+```
+
+**Or delete the deployment entirely:**
+```bash
+kubectl delete deployment sugartalking -n default
+```
+
+### Start/Resume the Application
+
+**Scale back up:**
+```bash
+kubectl scale deployment sugartalking --replicas=1 -n default
+```
+
+**Or reapply manifests if deleted:**
+```bash
+kubectl apply -f kubernetes/base/
+```
+
+### Check Status
+
+**Pod status:**
+```bash
+kubectl get pods -l app=sugartalking -n default
+```
+
+**Deployment status:**
+```bash
+kubectl get deployment sugartalking -n default
+```
+
+**Detailed information:**
+```bash
+kubectl describe deployment sugartalking -n default
+```
+
+### View Logs
+
+**Follow logs in real-time:**
+```bash
+kubectl logs -f -l app=sugartalking -n default
+```
+
+**View last 100 lines:**
+```bash
+kubectl logs --tail=100 -l app=sugartalking -n default
+```
+
+**Logs from specific pod:**
+```bash
+kubectl logs <pod-name> -n default
+```
+
+### Prevent Auto-Start on WSL Boot
+
+The application starts automatically because k3s is enabled. To prevent this:
+
+**Disable k3s service:**
+```bash
+sudo systemctl disable k3s
+```
+
+**Stop k3s now:**
+```bash
+sudo systemctl stop k3s
+```
+
+---
+
 ## 🐳 Docker (Local Testing)
 
 ### Using Docker Compose
