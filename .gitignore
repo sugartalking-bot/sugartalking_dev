@@ -71,3 +71,4 @@ Desktop.ini
 # Kubernetes secrets (template files are ok, but not filled-in secrets)
 kubernetes/base/secret.yaml
 !kubernetes/base/secret-template.yaml
+sugartalking.tar
