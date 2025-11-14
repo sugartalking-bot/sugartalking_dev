@@ -68,7 +68,12 @@ class DenonController {
         const volumeSlider = document.getElementById('volumeSlider');
         if (volumeSlider) {
             volumeSlider.addEventListener('input', (e) => {
-                document.getElementById('volumeValue').textContent = e.target.value;
+                const dbValue = parseInt(e.target.value);
+                document.getElementById('volumeValue').textContent = dbValue;
+
+                // Update Denon format display
+                const denonValue = dbValue + 80;
+                document.getElementById('volumeDenon').textContent = denonValue;
             });
         }
 
@@ -211,7 +216,8 @@ class DenonController {
      */
     async getStatus() {
         try {
-            const response = await fetch(`${this.API_BASE_URL}/status`);
+            const receiverIp = this.state.config?.receiver_host || '192.168.1.182';
+            const response = await fetch(`${this.API_BASE_URL}/status?receiver_ip=${receiverIp}`);
             const data = await response.json();
 
             if (data.success) {
@@ -246,6 +252,10 @@ class DenonController {
             this.state.volume = status.volume;
             document.getElementById('volumeValue').textContent = status.volume;
             document.getElementById('volumeSlider').value = status.volume;
+
+            // Update Denon format display (convert dB to 0-98 scale)
+            const denonValue = status.volume + 80;
+            document.getElementById('volumeDenon').textContent = denonValue;
         }
 
         // Update mute status
@@ -332,7 +342,12 @@ class DenonController {
      * Send API command
      */
     async sendCommand(endpoint, method = 'POST', body = null) {
-        console.log(`Sending command: ${method} ${endpoint}`);
+        const timestamp = new Date().toISOString();
+        console.log(`\n=== [${timestamp}] BUTTON PRESS ===`);
+        console.log(`Endpoint: ${method} ${this.API_BASE_URL}${endpoint}`);
+        if (body) {
+            console.log('Body:', JSON.stringify(body, null, 2));
+        }
 
         try {
             const options = {
@@ -349,10 +364,25 @@ class DenonController {
             const response = await fetch(`${this.API_BASE_URL}${endpoint}`, options);
             const data = await response.json();
 
+            console.log(`Response Status: ${response.status}`);
+            console.log('Response Data:', data);
+            console.log('================================\n');
+
             if (data.success) {
                 // Update status if included in response
                 if (data.status) {
                     this.updateStatus(data.status);
+                }
+
+                // Update volume if included in response
+                if (data.volume !== undefined) {
+                    this.state.volume = data.volume;
+                    document.getElementById('volumeValue').textContent = data.volume;
+                    document.getElementById('volumeSlider').value = data.volume;
+
+                    // Update Denon format display
+                    const denonValue = data.volume + 80;
+                    document.getElementById('volumeDenon').textContent = denonValue;
                 }
 
                 // Show success message if provided
@@ -434,7 +464,17 @@ class DenonController {
         if (this.state.power !== 'ON') return;
 
         console.log('Toggling mute');
-        await this.sendCommand('/volume/mute');
+        await this.sendCommand('/volume/mute', 'POST', {
+            mute_state: this.state.mute
+        });
+
+        // Toggle local state for immediate UI feedback
+        this.state.mute = !this.state.mute;
+        const muteBtn = document.getElementById('muteBtn');
+        if (muteBtn) {
+            muteBtn.textContent = this.state.mute ? 'Unmute' : 'Mute';
+            muteBtn.classList.toggle('active', this.state.mute);
+        }
     }
 
     /**

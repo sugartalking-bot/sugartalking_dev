@@ -71,14 +71,14 @@ def seed_denon_x2300w(session):
     )
     session.add(power_off)
 
-    # Add volume commands (for future expansion)
+    # Add volume commands
     volume_up = Command(
         receiver_id=receiver.id,
         action_type='volume',
         action_name='volume_up',
-        endpoint='/MainZone/index.put.asp',
+        endpoint='/goform/formiPhoneAppDirect.xml',
         http_method='GET',
-        command_template='?cmd0=PutMasterVolumeBtn/>',
+        command_template='?MVUP',
         description='Increase volume by one step'
     )
     session.add(volume_up)
@@ -87,9 +87,9 @@ def seed_denon_x2300w(session):
         receiver_id=receiver.id,
         action_type='volume',
         action_name='volume_down',
-        endpoint='/MainZone/index.put.asp',
+        endpoint='/goform/formiPhoneAppDirect.xml',
         http_method='GET',
-        command_template='?cmd0=PutMasterVolumeBtn/<',
+        command_template='?MVDOWN',
         description='Decrease volume by one step'
     )
     session.add(volume_down)
@@ -98,10 +98,10 @@ def seed_denon_x2300w(session):
         receiver_id=receiver.id,
         action_type='volume',
         action_name='volume_set',
-        endpoint='/MainZone/index.put.asp',
+        endpoint='/goform/formiPhoneAppDirect.xml',
         http_method='GET',
-        command_template='?cmd0=PutMasterVolumeSet/{level}',
-        description='Set volume to specific level (-80 to +18 dB)'
+        command_template='?MV{level}',
+        description='Set volume to specific level (00-98, where 00=-80dB, 98=+18dB)'
     )
     session.add(volume_set)
     session.flush()
@@ -112,9 +112,9 @@ def seed_denon_x2300w(session):
         param_name='level',
         param_type='integer',
         required=True,
-        min_value=-80,
-        max_value=18,
-        description='Volume level in dB (-80 to +18)'
+        min_value=0,
+        max_value=98,
+        description='Volume level (00-98, corresponds to -80dB to +18dB)'
     )
     session.add(volume_param)
 
@@ -141,6 +141,17 @@ def seed_denon_x2300w(session):
     )
     session.add(mute_off)
 
+    mute_toggle = Command(
+        receiver_id=receiver.id,
+        action_type='mute',
+        action_name='mute_toggle',
+        endpoint='/goform/formiPhoneAppDirect.xml',
+        http_method='GET',
+        command_template='?MUON',
+        description='Toggle mute on/off'
+    )
+    session.add(mute_toggle)
+
     # Add input selection commands
     input_sources = [
         ('CD', 'CD player'),
@@ -155,6 +166,30 @@ def seed_denon_x2300w(session):
         ('NET', 'Network/streaming'),
         ('BT', 'Bluetooth'),
     ]
+
+    # Add generic change_input command with parameter
+    change_input_cmd = Command(
+        receiver_id=receiver.id,
+        action_type='input',
+        action_name='change_input',
+        endpoint='/goform/formiPhoneAppDirect.xml',
+        http_method='GET',
+        command_template='?SI{input_source}',
+        description='Change input source'
+    )
+    session.add(change_input_cmd)
+    session.flush()
+
+    # Add parameter for change_input
+    input_param = CommandParameter(
+        command_id=change_input_cmd.id,
+        param_name='input_source',
+        param_type='string',
+        required=True,
+        valid_values='CD,DVD,BD,TV,SAT/CBL,MPLAY,GAME,TUNER,AUX1,NET,BT',
+        description='Input source identifier'
+    )
+    session.add(input_param)
 
     for source_id, description in input_sources:
         input_cmd = Command(

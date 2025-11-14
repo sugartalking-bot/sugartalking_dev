@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+IMAGE_NAME="sugartalking"
+
+echo -e "${GREEN}Sugartalking Logs${NC}"
+echo -e "${YELLOW}Press Ctrl+C to stop${NC}\n"
+
+# Get pod name
+POD_NAME=$(kubectl get pods -n default -l app=${IMAGE_NAME} -o jsonpath='{.items[0].metadata.name}')
+
+if [ -z "$POD_NAME" ]; then
+    echo -e "${RED}No running pods found${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}Tailing logs from pod: ${POD_NAME}${NC}\n"
+echo "========================================"
+
+# Follow logs
+kubectl logs -f -n default ${POD_NAME}

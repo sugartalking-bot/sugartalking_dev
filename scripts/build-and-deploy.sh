@@ -51,6 +51,12 @@ echo -e "${GREEN}✓ Deployment restarted${NC}\n"
 echo -e "${YELLOW}Waiting for rollout to complete...${NC}"
 kubectl rollout status deployment/${IMAGE_NAME} -n default --timeout=300s
 
+# Run database migrations
+echo -e "${YELLOW}Running database migrations...${NC}"
+POD_NAME=$(kubectl get pods -n default -l app=${IMAGE_NAME} -o jsonpath='{.items[0].metadata.name}')
+kubectl exec -n default ${POD_NAME} -- python scripts/migrate_all_commands.py
+echo -e "${GREEN}✓ Migrations completed${NC}\n"
+
 echo -e "\n${GREEN}════════════════════════════════════════${NC}"
 echo -e "${GREEN}  Deployment completed successfully!${NC}"
 echo -e "${GREEN}════════════════════════════════════════${NC}\n"

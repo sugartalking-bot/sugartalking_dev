@@ -76,8 +76,13 @@ class CommandExecutor:
             # Build the command URL
             url = self._build_url(receiver.protocol, host, port, command.endpoint, command.command_template, parameters)
 
-            logger.info(f"Executing {action_name} on {receiver_model} at {host}:{port}")
-            logger.debug(f"URL: {url}")
+            logger.info(f"=== COMMAND EXECUTION ===")
+            logger.info(f"Action: {action_name}")
+            logger.info(f"Receiver: {receiver_model} at {host}:{port}")
+            logger.info(f"Method: {command.http_method}")
+            logger.info(f"Full URL: {url}")
+            logger.info(f"Parameters: {parameters}")
+            logger.info(f"=========================")
 
             # Execute the HTTP request
             response = self._execute_http_request(
@@ -87,11 +92,14 @@ class CommandExecutor:
             )
 
             if response and response.status_code == 200:
-                logger.info(f"Command {action_name} executed successfully")
+                logger.info(f"✓ Command {action_name} SUCCESS - Status: {response.status_code}")
+                logger.info(f"Response body: {response.text[:200]}")
                 return True
             else:
                 status = response.status_code if response else "No response"
-                logger.error(f"Command failed with status: {status}")
+                logger.error(f"✗ Command {action_name} FAILED - Status: {status}")
+                if response:
+                    logger.error(f"Response body: {response.text[:500]}")
                 return False
 
         except Exception as e:
@@ -169,13 +177,15 @@ class CommandExecutor:
             return response
 
         except requests.Timeout:
-            logger.error(f"Request timeout after {timeout} seconds")
+            logger.error(f"✗ Request TIMEOUT after {timeout} seconds to URL: {url}")
             return None
         except requests.ConnectionError as e:
-            logger.error(f"Connection error: {str(e)}")
+            logger.error(f"✗ Connection ERROR to URL: {url}")
+            logger.error(f"Error details: {str(e)}")
             return None
         except Exception as e:
-            logger.error(f"HTTP request error: {str(e)}", exc_info=True)
+            logger.error(f"✗ HTTP request ERROR to URL: {url}")
+            logger.error(f"Error: {str(e)}", exc_info=True)
             return None
 
     def get_available_commands(self, receiver_model: str) -> list:

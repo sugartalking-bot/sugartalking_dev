@@ -1,0 +1,54 @@
+#!/bin/bash
+set -e
+
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+# Configuration
+IMAGE_NAME="sugartalking"
+IMAGE_TAG="latest"
+REGISTRY="localhost:5001"
+DOCKERFILE="docker/Dockerfile"
+KUBERNETES_DIR="kubernetes"
+
+echo -e "${GREEN}Starting Sugartalking...${NC}\n"
+
+# Check if image exists
+if docker images ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} | grep -q ${IMAGE_NAME}; then
+    echo -e "${YELLOW}Using existing Docker image${NC}"
+else
+    echo -e "${YELLOW}Building Docker image...${NC}"
+    docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -f ${DOCKERFILE} .
+    docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+    docker push ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+    echo -e "${GREEN}✓ Image built and pushed${NC}\n"
+fi
+
+# Apply Kubernetes manifests
+echo -e "${YELLOW}Applying Kubernetes manifests...${NC}"
+kubectl apply -f ${KUBERNETES_DIR}/base/
+
+# Scale deployment to 1 (in case it was stopped)
+echo -e "${YELLOW}Starting deployment...${NC}"
+kubectl scale deployment/${IMAGE_NAME} -n default --replicas=1
+
+# Wait for deployment
+echo -e "${YELLOW}Waiting for deployment to be ready...${NC}"
+kubectl rollout status deployment/${IMAGE_NAME} -n default --timeout=120s
+
+# Run migrations
+echo -e "\n${YELLOW}Running database migrations...${NC}"
+POD_NAME=$(kubectl get pods -n default -l app=${IMAGE_NAME} -o jsonpath='{.items[0].metadata.name}')
+kubectl exec -n default ${POD_NAME} -- python scripts/migrate_all_commands.py
+
+echo -e "\n${GREEN}════════════════════════════════════════${NC}"
+echo -e "${GREEN}  Sugartalking started successfully!${NC}"
+echo -e "${GREEN}════════════════════════════════════════${NC}\n"
+
+# Show pod status
+kubectl get pods -n default -l app=${IMAGE_NAME}
+
+echo -e "\n${YELLOW}Access the application at: http://localhost:5000${NC}"
+echo -e "${YELLOW}To view logs: kubectl logs -f -n default -l app=${IMAGE_NAME}${NC}"

@@ -8,5 +8,6 @@ device discovery, and error reporting.
 from .command_executor import CommandExecutor
 from .discovery import DiscoveryService
 from .error_reporter import ErrorReporter
+from .receiver_status import ReceiverStatus
 
-__all__ = ['CommandExecutor', 'DiscoveryService', 'ErrorReporter']
+__all__ = ['CommandExecutor', 'DiscoveryService', 'ErrorReporter', 'ReceiverStatus']
